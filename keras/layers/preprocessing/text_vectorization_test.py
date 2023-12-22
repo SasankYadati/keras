@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import tensorflow as tf
 from tensorflow import data as tf_data
 
 from keras import backend
@@ -104,3 +105,22 @@ class TextVectorizationTest(testing.TestCase):
             ]
         )
         model(backend.convert_to_tensor([["foo qux bar"], ["qux baz"]]))
+
+    @pytest.mark.skipif(
+        backend.backend() != "tensorflow", reason="Requires ragged tensors."
+    )
+    def test_ragged_tensor(self):
+        layer = layers.TextVectorization(
+            output_mode="int",
+            vocabulary=["baz", "bar", "foo"],
+            ragged=True,
+        )
+        input_data = [
+            ["foo baz baz bar"],
+            ["foo baz bar"],
+            ["foo baz"],
+            ["foo"],
+        ]
+        output = layer(input_data)
+        assert isinstance(output, tf.RaggedTensor)
+        assert output.shape == (4, None)
